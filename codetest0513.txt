@@ -1,0 +1,37 @@
+app.get("/", (req, res, next) => {
+    if (!(req.session.userInfo && req.session.userInfo.isLogined === true)) {
+        res.json({ message: "請登入" });
+    } else {
+        next()
+    };
+});
+
+let setSessionInfo = (req, res, next) => {
+    req.session.userInfo = {
+        name: "joe",
+        isLogined: true
+    };
+    next();
+}
+app.get("/logout",(req,res)=>{
+  req.session.destroy(); // 刪掉 session 物件資料
+  res.clearCookie("_ntust_tutorial_id"); // 刪掉 cookie 的 key-value pair
+  res.redirect("/login"); // 導入到 /login 頁面
+});
+
+//redis外存設定
+const redis =require("redis");
+const redisClient = redis.createClient();
+//給express用的
+const redisStore = require("connect-redis")(session);
+
+store : new redisStore({ client : redisClient }), 
+下面的session設定要多這一項
+app.use(session({
+    store : new redisStore({ client : redisClient }), 
+    secret: "abcd1234",
+    resave: true,
+    saveUninitialized: false,
+    name: "_ntust_tutorial_id",
+    ttl: 24 * 60 * 60 * 1
+}));
