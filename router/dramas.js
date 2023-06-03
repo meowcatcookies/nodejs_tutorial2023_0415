@@ -1,79 +1,76 @@
 const express = require("express");
 const router = express.Router();
-const fs = require("fs")
+
 const validator = require("../utils/validator");
-let readFilePromise = (dataPath) => {
-    return new Promise((resolve, reject) => {
-        fs.readFile(dataPath, "utf8", (err, data) => {
-            if (err) reject(err);
-            else resolve(JSON.parse(data));
-        });
-    });
-};
+const model = require("../models/dramas");
 router.get("/page", (req, res) => {
     res.render("dramas.html");
 });
-router.use(
-    validator.isTokenExsit,
-    validator.isTokenValid,
+//查詢影集 GET req dramas/list?type=?全or req.body
 
-);
-router.get("/list",
-    // validator.isTokenExsit,
-    // validator.isTokenValid,
-    (req, res, next) => {
-        if (!req.query.type) {
-            console.log("發生錯誤!");
-            res.status(400).json({ mes: "type缺少" });
-        } else {
-            next();
-        };
-    },
-    (req, res, next) => {
-        let data = ["犯罪", "殭屍", "愛情", "政治", "其他", "全"]
-        if (data.indexOf(req.query.type) === -1) {
-            console.log("type值錯誤");
-            res.status(400).json({ mes: "type值錯誤" })
-        } else {
-            next();
-        };
-    },
+router.get("/list", async (req, res) => {
+    try {
+        // let data = await model.find();
+        let condition = req.query.type === "全" ? {} : { "category": req.query.type };
+        let data = await model.find(condition);
+        res.json({ result: data });
+    } catch (err) {
+        res.status(500).json({ message: "sever發生錯誤!" })
+        console.log(err);
+    }
+});
 
-    async (req, res) => {
-        try {
-            let data = await readFilePromise("models/sample2.json");
-            let type = req.query.type;
-            if (type === "全") {
-                res.json({ result: data });
-            } else {
-                let filteredData = data.filter(ele => ele["category"] === type);
-                res.json({ result: filteredData });
-            };
-        } catch (err) {
-            res.status(500).json({ mes: "系統有問題!" });
-        };
+//新增影集 POST dramas/detail
+// category: 犯罪,name: wqe,score: 1
+router.post("/detail", async (req, res) => {
+    try {
+        let element = await model.findOne({}, { dramaId: 1 })
+            .sort({ dramaId: -1 });
 
-    });
-router.post("/data",
-    // validator.isTokenExsit,
-    // validator.isTokenValid,
+        let newestDramId = Number(element["dramaId"]) + 1;
 
-    async (req, res) => {
-        try {
-            let data = await readFilePromise("models/sample2.json");
-            let lastestDramaId = data.map(ele => ele["dramaId"])
-                .filter(v => v !== undefined)
-                .sort((a, b) => b - a)[0];
-            let NewDramaId = Number(lastestDramaId) + 1;
-            req.body.dramaId = String(NewDramaId);
-            data.push(req.body);
+        req.body["dramaId"] = String(newestDramId);
+        console.log(req.body);
+        let result = await model.create(req.body);
+        res.json({ message: "ok." });
+    } catch (err) {
+        res.status(500).json({ message: "sever發生錯誤!" })
+        console.log(err);
+    }
+});
 
-            fs.writeFileSync("models/sample2.json", JSON.stringify(data), "utf8");
-            res.json({ mes: "OK" })
-        }
-        catch (err) {
-            console.log(err);
-            res.status(500).json({ mes: "系統有問題!" });
-        };
-    });
+//修改 PUT name: 132,score: 1
+router.put("/detail/:dramaId", async (req, res) => {
+    try {
+        let putId = req.params.dramaId;
+        console.log({ putId })
+        let result = await model.updateOne({
+            "dramaId": putId
+        }, {
+            "$set": { "name": req.body.name, "score": req.body.score }
+        })
+
+        console.log(result)
+        res.json({ message: "ok." });
+    } catch (err) {
+        res.status(500).json({ message: "sever發生錯誤!" })
+        console.log(err);
+    }
+});
+//刪除 DELETE 影集編號 detail/" + dramaId
+router.delete("/detail/:dramaId", async (req, res) => {
+    try {
+        let deleteId = req.params.dramaId;
+        console.log({ deleteId })
+        let result = await model.deleteOne({
+            "dramaId": deleteId
+        })
+        console.log(result)
+        res.json({ message: "ok." });
+    } catch (err) {
+        res.status(500).json({ message: "sever發生錯誤!" })
+        console.log(err);
+    }
+});
+
 module.exports = router;

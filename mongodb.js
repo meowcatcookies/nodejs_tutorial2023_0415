@@ -7,7 +7,11 @@ conn.on("connected", () => {
 });
 
 const mongoSchema = new mongoose.Schema({
-    "_id": String
+    "_id": String,
+    "dramaId": String,
+    "category": String,
+    "name": String,
+    "score": Number
 }, {
     collection: "dramas-table"
 });
