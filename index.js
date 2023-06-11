@@ -9,14 +9,7 @@ const authRouter = require("./router/auth");
 const validator = require("./utils/validator");
 
 const redis = require("redis");
-//const redisClient = redis.createClient();
-// const redisStore = require("connect-redis")(session);
 
-// const redisClient = redis.createClient({
-//     host: 'localhost', // Redis 伺服器的主機位址
-//     port: 6379, // Redis 伺服器的連接埠
-//     // 可能需要其他的連線參數，如密碼等
-// });
 
 app.engine("html", hbs.__express);
 app.set("views", path.join(__dirname, "application", "views"));
